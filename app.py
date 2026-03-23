@@ -53,14 +53,57 @@ def build_prompt(round_num, total_rounds, topic, opponent_response=None, is_open
     )
 
 
+SPEAKER_COLORS = {
+    1: {"border": "#3b82f6", "bg": "#eff6ff", "label": "#1e40af"},
+    2: {"border": "#f97316", "bg": "#fff7ed", "label": "#c2410c"},
+}
+
+PROMPT_STYLE = "color: #6b7280; font-size: 0.88em; border-left: 3px solid #d1d5db; padding-left: 12px; margin-bottom: 8px;"
+
+
+def render_transcript(transcript):
+    """Render the debate transcript with color-coded speakers and prompts."""
+    current_round = 0
+    for entry in transcript:
+        if entry["round"] != current_round:
+            current_round = entry["round"]
+            st.markdown(f"---\n### Round {current_round}")
+
+        colors = SPEAKER_COLORS[entry.get("speaker_num", 1)]
+
+        if entry.get("prompt"):
+            st.markdown(
+                f'<details style="{PROMPT_STYLE}">'
+                f'<summary><strong>Prompt sent to {entry["speaker"]}</strong></summary>'
+                f'<p style="white-space: pre-wrap; margin-top: 6px;">{entry["prompt"]}</p>'
+                f'</details>',
+                unsafe_allow_html=True,
+            )
+
+        st.markdown(
+            f'<div style="border-left: 4px solid {colors["border"]}; '
+            f'background: {colors["bg"]}; padding: 12px 16px; '
+            f'border-radius: 0 8px 8px 0; margin-bottom: 16px;">'
+            f'<strong style="color: {colors["label"]};">{entry["speaker"]}</strong>'
+            f'<div style="margin-top: 8px; white-space: pre-wrap;">{entry["text"]}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+
 def format_transcript_md(transcript):
-    """Format the debate transcript as markdown."""
+    """Format the debate transcript as plain markdown (for export)."""
     md = ""
     current_round = 0
     for entry in transcript:
         if entry["round"] != current_round:
             current_round = entry["round"]
             md += f"\n---\n### Round {current_round}\n\n"
+        if entry.get("prompt"):
+            md += f"> **Prompt to {entry['speaker']}:**\n>\n"
+            for line in entry["prompt"].split("\n"):
+                md += f"> {line}\n"
+            md += "\n"
         md += f"**{entry['speaker']}:**\n\n{entry['text']}\n\n"
     return md
 
@@ -172,7 +215,7 @@ st.caption(f"{label1} vs {label2} | {rounds} round{'s' if rounds != 1 else ''}")
 
 # Show existing transcript
 if st.session_state.transcript and not st.session_state.debate_running:
-    st.markdown(format_transcript_md(st.session_state.transcript))
+    render_transcript(st.session_state.transcript)
 
 # --- Login Setup ---
 if login_btn:
@@ -317,11 +360,13 @@ if start_btn:
 
             st.session_state.transcript.append({
                 "speaker": label1,
+                "speaker_num": 1,
                 "round": round_num,
+                "prompt": prompt1,
                 "text": response1,
             })
             with transcript_area.container():
-                st.markdown(format_transcript_md(st.session_state.transcript))
+                render_transcript(st.session_state.transcript)
 
             # --- LLM 2 ---
             status_area.write(f"**Round {round_num}/{rounds}** — Sending to {llm2}...")
@@ -338,11 +383,13 @@ if start_btn:
 
             st.session_state.transcript.append({
                 "speaker": label2,
+                "speaker_num": 2,
                 "round": round_num,
+                "prompt": prompt2,
                 "text": response2,
             })
             with transcript_area.container():
-                st.markdown(format_transcript_md(st.session_state.transcript))
+                render_transcript(st.session_state.transcript)
 
             last_response = response2
 

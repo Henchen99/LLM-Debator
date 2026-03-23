@@ -8,7 +8,7 @@
             "stop_button": "button[aria-label='Stop generating']"
         },
         "models": ["Instant", "Thinking"],
-        "model_selector": "button[data-testid='model-selector'], [class*='model'] button",
+        "model_selector": "button[data-testid='model-selector'], [role='tablist'] button, [class*='model-switcher'] button, button[aria-label*='odel'], [class*='model'] button",
         "input_method": "fill",
         "stability_seconds": 4,
         "max_wait_seconds": 180

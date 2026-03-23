@@ -85,31 +85,84 @@ class BrowserController:
         return page
 
     def select_model(self, name, model_name):
-        """Select a specific model variant in the provider's model picker."""
+        """Select a specific model variant in the provider's model picker.
+
+        Tries multiple strategies:
+        1. Direct text match — the toggle/tab is already visible on the page
+        2. Dropdown — click the model selector trigger, then pick from the menu
+        3. Broad text search — look for any clickable element matching the model name
+        """
         config = self.providers[name]
         page = self.pages[name]
 
         model_selector = config.get("model_selector")
-        if not model_selector or not model_name:
+        if not model_name:
             return False
+
+        # --- Strategy 1: direct toggle/tab already visible on the page ---
+        try:
+            direct = page.get_by_role("tab", name=model_name)
+            if direct.count() > 0 and direct.first.is_visible(timeout=2000):
+                direct.first.click(timeout=5000)
+                page.wait_for_timeout(500)
+                logger.info(f"Selected model '{model_name}' for {name} (direct tab)")
+                return True
+        except Exception:
+            pass
 
         try:
-            trigger = self._find_first_visible(page, model_selector, timeout=5000)
-            if not trigger:
-                logger.warning(f"Model selector trigger not found for {name}")
-                return False
+            direct = page.get_by_role("radio", name=model_name)
+            if direct.count() > 0 and direct.first.is_visible(timeout=1000):
+                direct.first.click(timeout=5000)
+                page.wait_for_timeout(500)
+                logger.info(f"Selected model '{model_name}' for {name} (direct radio)")
+                return True
+        except Exception:
+            pass
 
-            trigger.click()
-            page.wait_for_timeout(1000)
+        # --- Strategy 2: open dropdown/menu, then pick option ---
+        if model_selector:
+            try:
+                trigger = self._find_first_visible(page, model_selector, timeout=5000)
+                if trigger:
+                    trigger.click()
+                    page.wait_for_timeout(1000)
 
-            model_option = page.get_by_text(model_name, exact=False).first
-            model_option.click(timeout=5000)
-            page.wait_for_timeout(500)
-            logger.info(f"Selected model '{model_name}' for {name}")
-            return True
-        except Exception as e:
-            logger.warning(f"Could not select model '{model_name}' for {name}: {e}")
-            return False
+                    model_option = page.get_by_text(model_name, exact=False).first
+                    model_option.click(timeout=5000)
+                    page.wait_for_timeout(500)
+                    logger.info(f"Selected model '{model_name}' for {name} (dropdown)")
+                    return True
+            except Exception as e:
+                logger.debug(f"Dropdown strategy failed for {name}: {e}")
+                try:
+                    page.keyboard.press("Escape")
+                    page.wait_for_timeout(300)
+                except Exception:
+                    pass
+
+        # --- Strategy 3: broad text search for any clickable element ---
+        try:
+            candidates = page.get_by_text(model_name, exact=False)
+            for i in range(candidates.count()):
+                el = candidates.nth(i)
+                try:
+                    if el.is_visible(timeout=1000):
+                        tag = el.evaluate("e => e.tagName.toLowerCase()")
+                        clickable = tag in ("button", "a", "label", "div", "span")
+                        role = el.get_attribute("role") or ""
+                        if clickable or role in ("tab", "radio", "option", "menuitem", "menuitemradio", "button"):
+                            el.click(timeout=5000)
+                            page.wait_for_timeout(500)
+                            logger.info(f"Selected model '{model_name}' for {name} (text match)")
+                            return True
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        logger.warning(f"Could not select model '{model_name}' for {name}")
+        return False
 
     def detect_models(self, name):
         """Try to detect available model options from the provider's UI."""
