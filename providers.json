@@ -1,0 +1,72 @@
+{
+    "ChatGPT": {
+        "url": "https://chatgpt.com",
+        "selectors": {
+            "input": "#prompt-textarea",
+            "send_button": "button[data-testid='send-button']",
+            "response_container": "[data-message-author-role='assistant']",
+            "stop_button": "button[aria-label='Stop generating']"
+        },
+        "models": ["Instant", "Thinking"],
+        "model_selector": "button[data-testid='model-selector'], [class*='model'] button",
+        "input_method": "fill",
+        "stability_seconds": 4,
+        "max_wait_seconds": 180
+    },
+    "Gemini": {
+        "url": "https://gemini.google.com/app",
+        "selectors": {
+            "input": "div.ql-editor[contenteditable='true']",
+            "send_button": "button.send-button, button[aria-label='Send message']",
+            "response_container": "message-content.model-response-text, .response-container .markdown",
+            "stop_button": "button[aria-label='Stop response']"
+        },
+        "models": ["Fast", "Thinking", "Pro"],
+        "model_selector": "button.model-selector, [data-test-id='model-selector'], button[aria-label*='model']",
+        "input_method": "fill",
+        "stability_seconds": 4,
+        "max_wait_seconds": 180
+    },
+    "Claude": {
+        "url": "https://claude.ai/new",
+        "selectors": {
+            "input": "div.ProseMirror[contenteditable='true']",
+            "send_button": "button[aria-label='Send Message']",
+            "response_container": "[data-is-streaming]",
+            "stop_button": "button[aria-label='Stop Response']"
+        },
+        "models": [],
+        "model_selector": "button[data-testid='model-selector'], button[class*='model'], fieldset button",
+        "input_method": "fill",
+        "stability_seconds": 4,
+        "max_wait_seconds": 180
+    },
+    "Grok": {
+        "url": "https://grok.com",
+        "selectors": {
+            "input": "textarea",
+            "send_button": "button[aria-label='Send message'], button[type='submit']",
+            "response_container": ".message-bubble",
+            "stop_button": "button[aria-label='Stop generating']"
+        },
+        "models": ["Fast", "Expert", "Heavy"],
+        "model_selector": "button[aria-label*='model'], [class*='model-select']",
+        "input_method": "fill",
+        "stability_seconds": 4,
+        "max_wait_seconds": 180
+    },
+    "DeepSeek": {
+        "url": "https://chat.deepseek.com",
+        "selectors": {
+            "input": "textarea#chat-input, textarea",
+            "send_button": "div[role='button'][aria-disabled]",
+            "response_container": ".ds-markdown",
+            "stop_button": "div[role='button'] .ds-icon"
+        },
+        "models": [],
+        "model_selector": "div.ds-segmented, [class*='model']",
+        "input_method": "fill",
+        "stability_seconds": 4,
+        "max_wait_seconds": 180
+    }
+}
